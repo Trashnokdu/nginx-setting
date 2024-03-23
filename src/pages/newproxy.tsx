@@ -120,6 +120,7 @@ export default function Home() {
                 type="text"
                 id={`backend_port_${index}`}
                 className="outline outline-2 outline-offset-2 rounded"
+                value={proxy.backend_port}
               />
             </div>
             <div className="grid w-full max-w-sm justify-center content-center">

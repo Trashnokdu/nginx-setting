@@ -38,7 +38,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     );
 
     // 정규 표현식을 사용하여 listen과 backend 주소 추출
-    const listenRegex = /listen (\d+\.\d+\.\d+\.\d+:\d+)/g;
+    const listenRegex = /listen (\d+\.\d+\.\d+\.\d+:\d+)( udp)?/g;
     const backendRegex = /proxy_pass (\d+\.\d+\.\d+\.\d+:\d+)/g;
 
     let listenMatch;
@@ -52,6 +52,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
         listen: listenMatch[1],
         backend: backendMatch[1],
         port: listenMatch[1].split(':')[1],
+        udp: listenMatch[2] ? 'true' : 'false', // " udp"가 있으면 "true", 없으면 "false"
       });
     }
 

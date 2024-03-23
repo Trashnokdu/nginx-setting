@@ -8,6 +8,7 @@ type Proxy = {
   proxy_port: string;
   backend_ip: string;
   backend_port: string;
+  udp: string;
 };
 
 function createNginxConfig(data: any) {
@@ -15,7 +16,7 @@ function createNginxConfig(data: any) {
 
   data.forEach((item: Proxy) => {
     config += `server {\n`;
-    config += `    listen ${item.proxy_ip}:${item.proxy_port};\n`;
+    config += `    listen ${item.proxy_ip}:${item.proxy_port}${item.udp === 'true' ? ' udp' : ''};\n`;
     config += `    proxy_pass ${item.backend_ip}:${item.backend_port};\n`;
     config += `}\n\n`;
   });
@@ -87,17 +88,6 @@ export default async function handler(
           }
         }
       });
-    });
-    fs.writeFileSync(dir + type + '/' + phone + '.cfg', ''); // 동기적 방식으로 변경
-    child_process.exec('sudo nginx -s reload', (error) => {
-      if (error) {
-        console.error(error);
-        return res.status(418).json({
-          status: 418,
-          code: 'NGINX_ERROR',
-          message: 'Nginx에서 오류가 발생하였습니다',
-        });
-      }
     });
     const config = createNginxConfig(data);
     console.log(dir + type + '/' + phone + '.cfg');
