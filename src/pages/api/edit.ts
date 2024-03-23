@@ -60,13 +60,6 @@ export default async function handler(
     });
   }
 
-  if (phone.length !== 4) {
-    return res.status(400).send({
-      code: 'INVALID_PHONE_LENGTH',
-      message: '전화번호는 마지막 4자리를 입력해야 합니다.',
-    });
-  }
-
   try {
     for (const i of data) {
       const portAvailable = await checkPort(parseInt(i.proxy_port));
