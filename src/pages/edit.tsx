@@ -215,6 +215,9 @@ export default function Home() {
             })
             .catch((error) => {
               if (error.response.status === 409) {
+                if (error.response.data.code == 'REQ_PORT_CONFLICT') {
+                  return alert('입력값에 중복된 포트가 있습니다');
+                }
                 return alert('사용중인 포트입니다');
               }
               alert('일시적인 오류가 발생하였습니다');
