@@ -17,7 +17,13 @@ export default function Home() {
   const [selectedValue, setSelectedValue] = useState('');
   const [phone, setPhone] = useState<string>('');
   const [proxies, setProxies] = useState<Proxy[]>([
-    { proxy_ip: '', proxy_port: '', backend_ip: '', backend_port: '' },
+    {
+      proxy_ip: '',
+      proxy_port: '',
+      backend_ip: '',
+      backend_port: '',
+      udp: 'false',
+    },
   ]);
 
   useEffect(() => {
@@ -35,7 +41,13 @@ export default function Home() {
   const addOne = () => {
     setProxies([
       ...proxies,
-      { proxy_ip: '', proxy_port: '', backend_ip: '', backend_port: '' },
+      {
+        proxy_ip: '',
+        proxy_port: '',
+        backend_ip: '',
+        backend_port: '',
+        udp: 'false',
+      },
     ]);
   };
 
