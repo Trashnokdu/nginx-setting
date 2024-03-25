@@ -69,6 +69,7 @@ export default function Home() {
               udp: item.udp,
             };
           });
+          setSelectedValue(type);
           setProxies(newArray);
         });
     }

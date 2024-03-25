@@ -51,18 +51,20 @@ export default async function handler(
     dirdata.forEach((i) => {
       if (fs.statSync(dir + i).isDirectory()) proxyList.push(i);
     });
-    const portSet = new Set();
+    const ipPortSet = new Set();
     for (const item of data) {
-      if (portSet.has(item.proxy_port)) {
-        // 이미 존재하는 'proxy_port'를 발견한 경우, 오류 메시지 반환
+      const ipPort = item.proxy_ip + ':' + item.proxy_port; // IP와 포트를 결합하여 고유한 문자열 생성
+      if (ipPortSet.has(ipPort)) {
+        // 이미 존재하는 'proxy_ip:proxy_port' 조합을 발견한 경우, 오류 메시지 반환
         return res.status(409).json({
           status: 409,
           code: 'REQ_PORT_CONFLICT',
           message: '요청된 데이터 내에 중복된 프록시 포트가 존재합니다.',
         });
       }
-      portSet.add(item.proxy_port); // 'portSet'에 'proxy_port' 추가
+      ipPortSet.add(ipPort); // 'ipPortSet'에 'proxy_ip:proxy_port' 조합 추가
     }
+
     proxyList.forEach((i: any) => {
       const now_files = fs.readdirSync(dir + i);
       now_files.forEach((fileName) => {
@@ -70,25 +72,32 @@ export default async function handler(
           return; // 현재 반복을 스킵
         }
         const fileContent = fs.readFileSync(dir + i + '/' + fileName, 'utf-8');
-        const listenRegex = /listen (\d+\.\d+\.\d+\.\d+:(\d+))/g;
+        const listenRegex = /listen (\d+\.\d+\.\d+\.\d+):(\d+)/g; // IP와 포트를 분리해서 캡처
         const listenMatches = [...fileContent.matchAll(listenRegex)];
-        const ports = listenMatches.map((match) => match[1].split(':')[1]);
+        const ipPortPairs = listenMatches.map((match) => ({
+          ip: match[1],
+          port: match[2],
+        })); // IP와 포트를 객체로 매핑
         for (const configItem of data) {
           // 'data' 배열의 각 항목에 대해 순회
-          for (const port of ports) {
-            // 파일에서 추출한 각 포트에 대해 순회
-            if (configItem.proxy_port === port) {
-              // 'data' 배열의 항목 중 'proxy_port'와 현재 포트가 일치하는지 확인
+          for (const ipPort of ipPortPairs) {
+            // 파일에서 추출한 각 IP-포트 쌍에 대해 순회
+            if (
+              configItem.proxy_ip === ipPort.ip &&
+              configItem.proxy_port === ipPort.port
+            ) {
+              // 'data' 배열의 항목 중 'proxy_ip'와 'proxy_port'가 현재 IP-포트 쌍과 모두 일치하는지 확인
               return res.status(409).json({
                 status: 409,
                 code: 'PORT_CONFLICT',
-                message: '이미 사용 중인 포트입니다.',
+                message: '이미 사용 중인 IP와 포트입니다.',
               });
             }
           }
         }
       });
     });
+
     const config = createNginxConfig(data);
     console.log(dir + type + '/' + phone + '.cfg');
     fs.writeFileSync(dir + type + '/' + phone + '.cfg', config); // 동기적 방식으로 변경

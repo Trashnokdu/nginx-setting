@@ -84,6 +84,7 @@ export default function Home() {
             <div className="grid w-full max-w-sm justify-center gap-1.5 mb-8">
               <Label>프록시 IP</Label>
               <input
+                style={{ width: '80%' }}
                 onChange={(e) => onChange(index, 'proxy_ip', e.target.value)}
                 type="text"
                 id={`proxy_ip_${index}`}
@@ -94,6 +95,7 @@ export default function Home() {
             <div className="grid w-full max-w-sm justify-center gap-1.5 mb-8">
               <Label>프록시 포트</Label>
               <input
+                style={{ width: '80%' }}
                 onChange={(e) => onChange(index, 'proxy_port', e.target.value)}
                 type="text"
                 id={`proxy_port_${index}`}
@@ -104,6 +106,7 @@ export default function Home() {
             <div className="grid w-full max-w-sm justify-center gap-1.5 mb-8">
               <Label>벡엔드 아이피</Label>
               <input
+                style={{ width: '80%' }}
                 onChange={(e) => onChange(index, 'backend_ip', e.target.value)}
                 type="text"
                 id={`backend_ip_${index}`}
@@ -114,6 +117,7 @@ export default function Home() {
             <div className="grid w-full max-w-sm justify-center gap-1.5 mb-8">
               <Label>백엔드 포트</Label>
               <input
+                style={{ width: '80%' }}
                 onChange={(e) =>
                   onChange(index, 'backend_port', e.target.value)
                 }
@@ -122,6 +126,18 @@ export default function Home() {
                 className="outline outline-2 outline-offset-2 rounded"
                 value={proxy.backend_port}
               />
+            </div>
+            <div className="grid w-full max-w-sm justify-center gap-1.5 mb-8">
+              <Label>UDP</Label>
+              <select
+                style={{ width: '150%' }}
+                className="outline outline-2 outline-offset-2 rounded"
+                value={proxy.udp}
+                onChange={(e) => onChange(index, 'udp', e.target.value)}
+              >
+                <option value="true">True</option>
+                <option value="false">False</option>
+              </select>
             </div>
             <div className="grid w-full max-w-sm justify-center content-center">
               <Button
