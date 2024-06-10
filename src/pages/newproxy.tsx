@@ -20,9 +20,11 @@ export default function Home() {
     {
       proxy_ip: '',
       proxy_port: '',
+      proxy_bind: '',
       backend_ip: '',
       backend_port: '',
       udp: 'false',
+      protocol: 'false',
     },
   ]);
 
@@ -47,6 +49,7 @@ export default function Home() {
         backend_ip: '',
         backend_port: '',
         udp: 'false',
+        protocol: 'false',
       },
     ]);
   };
@@ -116,6 +119,17 @@ export default function Home() {
               />
             </div>
             <div className="grid w-full max-w-sm justify-center gap-1.5 mb-8">
+              <Label>프록시 바인드</Label>
+              <input
+                style={{ width: '80%' }}
+                onChange={(e) => onChange(index, 'proxy_bind', e.target.value)}
+                type="text"
+                id={`proxy_bind_${index}`}
+                className="outline outline-2 outline-offset-2 rounded"
+                value={proxy.proxy_bind}
+              />
+            </div>
+            <div className="grid w-full max-w-sm justify-center gap-1.5 mb-8">
               <Label>벡엔드 아이피</Label>
               <input
                 style={{ width: '80%' }}
@@ -146,6 +160,18 @@ export default function Home() {
                 className="outline outline-2 outline-offset-2 rounded"
                 value={proxy.udp}
                 onChange={(e) => onChange(index, 'udp', e.target.value)}
+              >
+                <option value="true">True</option>
+                <option value="false">False</option>
+              </select>
+            </div>
+            <div className="grid w-full max-w-sm justify-center gap-1.5 mb-8">
+              <Label>Proxy Protocol</Label>
+              <select
+                style={{ width: '150%' }}
+                className="outline outline-2 outline-offset-2 rounded"
+                value={proxy.protocol}
+                onChange={(e) => onChange(index, 'protocol', e.target.value)}
               >
                 <option value="true">True</option>
                 <option value="false">False</option>

@@ -1,17 +1,43 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
+import axios from 'axios';
 
-interface Song {
+interface Response {
   type: string;
   number: string;
   listen: string;
   backend: string;
+  bind: string;
   port: string;
 }
 
+const deleteItem = (phone: string, type: string) => {
+  axios
+    .post('/api/edit', {
+      phone: phone,
+      type: type,
+      data: [],
+    })
+    .then(() => {
+      alert('수정이 완료되었습니다');
+    })
+    .catch((error) => {
+      if (error.response.status === 418) {
+        return alert('Nginx에서 오류가 발생하였습니다');
+      }
+      if (error.response.status === 409) {
+        if (error.response.data.code == 'REQ_PORT_CONFLICT') {
+          return alert('입력값에 중복된 포트가 있습니다');
+        }
+        return alert('사용중인 포트입니다');
+      }
+      alert('일시적인 오류가 발생하였습니다');
+    });
+};
+
 export default function Home() {
-  const [data, setData] = useState<Song[]>([]);
+  const [data, setData] = useState<Response[]>([]);
   const [types, setTypes] = useState([]);
   const router = useRouter();
   const [selectedValue, setSelectedValue] = useState('');
@@ -19,6 +45,7 @@ export default function Home() {
     // 선택된 값을 상태로 저장합니다.
     setSelectedValue(event.target.value);
   };
+
   useEffect(() => {
     fetch('/api/all')
       .then((res) => res.json())
@@ -56,13 +83,50 @@ export default function Home() {
           </option>
         ))}
       </select>
+      <Button
+        className="bg-blue-500 text-white py-2 px-6 rounded-lg"
+        style={{ marginBottom: '10px', marginLeft: '10px' }}
+        onClick={() => {
+          axios
+            .post('/api/apply')
+            .then(() => {
+              alert('수정이 완료되었습니다');
+            })
+            .catch((error) => {
+              if (error.response.status === 418) {
+                return alert('Nginx에서 오류가 발생하였습니다');
+              }
+              if (error.response.status === 409) {
+                if (error.response.data.code == 'REQ_PORT_CONFLICT') {
+                  return alert('입력값에 중복된 포트가 있습니다');
+                }
+                return alert('사용중인 포트입니다');
+              }
+              alert('일시적인 오류가 발생하였습니다');
+            });
+        }}
+      >
+        프록시 적용하기
+      </Button>
+      <Button
+        className="bg-blue-500 text-white py-2 px-6 rounded-lg"
+        style={{ marginBottom: '10px', marginLeft: '10px' }}
+        onClick={() => {
+          location.href = '/vpsedit';
+        }}
+      >
+        서버 타입 수정하기
+      </Button>
       <table className="table">
         <thead>
           <tr>
             <th>Phone Number</th>
             <th>VPS Type</th>
-            <th>Proxy Ports</th>
+            <th>listen</th>
+            <th>Proxy pass</th>
+            <th>proxy bind</th>
             <th>Edit</th>
+            <th>Delete</th>
           </tr>
         </thead>
         <tbody>
@@ -72,13 +136,29 @@ export default function Home() {
               <tr key={index}>
                 <td>{item.number}</td>
                 <td>{item.type}</td>
-                <td>{item.port}</td>
+                <td>{item.listen}</td>
+                <td>{item.backend}</td>
+                <td>{item.bind}</td>
                 <td>
                   <a
                     href={`/edit?phone=${item.number}&type=${item.type}`}
                     style={{ color: 'blue' }}
                   >
                     수정하러가기
+                  </a>
+                </td>
+                <td>
+                  <a
+                    href="#"
+                    style={{ color: 'red' }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (window.confirm('정말 삭제하시겠습니까?')) {
+                        deleteItem(item.number, item.type);
+                      }
+                    }}
+                  >
+                    삭제
                   </a>
                 </td>
               </tr>

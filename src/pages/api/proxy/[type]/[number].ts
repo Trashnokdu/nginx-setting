@@ -39,11 +39,13 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 
     // 정규 표현식을 사용하여 listen과 backend 주소 추출
     const listenRegex = /listen (\d+\.\d+\.\d+\.\d+:\d+)( udp)?/g;
+    const protocolRegex = /proxy_protocol/;
     const backendRegex = /proxy_pass (\d+\.\d+\.\d+\.\d+:\d+)/g;
-
+    const bindRegex = /proxy_bind\s+(\S+);/g;
     let listenMatch;
     let backendMatch;
-
+    const bindMatch = bindRegex.exec(fileContent);
+    const protocolMatch = protocolRegex.exec(fileContent);
     while (
       (listenMatch = listenRegex.exec(fileContent)) !== null &&
       (backendMatch = backendRegex.exec(fileContent)) !== null
@@ -52,7 +54,9 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
         listen: listenMatch[1],
         backend: backendMatch[1],
         port: listenMatch[1].split(':')[1],
+        proxy_bind: bindMatch ? bindMatch[1] : '',
         udp: listenMatch[2] ? 'true' : 'false', // " udp"가 있으면 "true", 없으면 "false"
+        protocol: protocolMatch ? 'true' : 'false', // " udp"가 있으면 "true", 없으면 "false"
       });
     }
 

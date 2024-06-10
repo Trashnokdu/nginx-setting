@@ -23,9 +23,11 @@ export default function Home() {
     {
       proxy_ip: '',
       proxy_port: '',
+      proxy_bind: '',
       backend_ip: '',
       backend_port: '',
       udp: 'false',
+      protocol: 'false',
     },
   ]);
 
@@ -66,7 +68,9 @@ export default function Home() {
               proxy_port: listenPort,
               backend_ip: backendIP,
               backend_port: backendPort,
+              proxy_bind: item.proxy_bind,
               udp: item.udp,
+              protocol: item.protocol,
             };
           });
           setSelectedValue(type);
@@ -90,6 +94,7 @@ export default function Home() {
         backend_ip: '',
         backend_port: '',
         udp: 'false',
+        protocol: 'false',
       },
     ]);
   };
@@ -102,7 +107,7 @@ export default function Home() {
 
   return (
     <main className="flex flex-col items-center justify-center p-10 mx-auto">
-      <h1 className="text-3xl font-semibold mb-6 mx-auto">신규 프록시 등록</h1>
+      <h1 className="text-3xl font-semibold mb-6 mx-auto">프록시 등록</h1>
       <div className="grid w-full max-w-sm justify-center gap-1.5 mb-8">
         <Label>VPS 타입</Label>
         <select
@@ -154,6 +159,17 @@ export default function Home() {
               />
             </div>
             <div className="grid w-full max-w-sm justify-center gap-1.5 mb-8">
+              <Label>프록시 바인드</Label>
+              <input
+                style={{ width: '80%' }}
+                onChange={(e) => onChange(index, 'proxy_bind', e.target.value)}
+                type="text"
+                id={`proxy_bind_${index}`}
+                className="outline outline-2 outline-offset-2 rounded"
+                value={proxy.proxy_bind}
+              />
+            </div>
+            <div className="grid w-full max-w-sm justify-center gap-1.5 mb-8">
               <Label>벡엔드 아이피</Label>
               <input
                 style={{ width: '80%' }}
@@ -184,6 +200,18 @@ export default function Home() {
                 className="outline outline-2 outline-offset-2 rounded"
                 value={proxy.udp}
                 onChange={(e) => onChange(index, 'udp', e.target.value)}
+              >
+                <option value="true">True</option>
+                <option value="false">False</option>
+              </select>
+            </div>
+            <div className="grid w-full max-w-sm justify-center gap-1.5 mb-8">
+              <Label>Proxy Protocol</Label>
+              <select
+                style={{ width: '150%' }}
+                className="outline outline-2 outline-offset-2 rounded"
+                value={proxy.protocol}
+                onChange={(e) => onChange(index, 'protocol', e.target.value)}
               >
                 <option value="true">True</option>
                 <option value="false">False</option>
@@ -235,6 +263,23 @@ export default function Home() {
       <Button
         className="bg-blue-500 text-white py-2 px-6 rounded-lg"
         onClick={() => {
+          if (
+            proxies.some((i) => {
+              if (
+                !i.proxy_ip ||
+                !i.backend_ip ||
+                !i.backend_port ||
+                !i.proxy_port
+              ) {
+                alert('올바르지않은 입력입니다. 입력란을 다시 확인해주세요');
+                return true; // 상위 함수로 돌아가기 위해 true 반환
+              }
+              return false; // 조건에 부합하지 않으면 false 반환
+            })
+          ) {
+            // 상위 함수로 돌아감
+            return;
+          }
           axios
             .post('/api/edit', {
               phone: phone,

@@ -1,14 +1,15 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import fs from 'fs';
-import * as child_process from 'child_process';
 const dir = '/root/.proxy/stream/';
 
 type Proxy = {
   proxy_ip: string;
   proxy_port: string;
+  proxy_bind: string;
   backend_ip: string;
   backend_port: string;
   udp: string;
+  protocol: string;
 };
 
 function createNginxConfig(data: any) {
@@ -17,7 +18,11 @@ function createNginxConfig(data: any) {
   data.forEach((item: Proxy) => {
     config += `server {\n`;
     config += `    listen ${item.proxy_ip}:${item.proxy_port}${item.udp === 'true' ? ' udp' : ''};\n`;
+    item.proxy_bind ? (config += `    proxy_bind ${item.proxy_bind};\n`) : '';
     config += `    proxy_pass ${item.backend_ip}:${item.backend_port};\n`;
+    item.protocol
+      ? (config += `    ${item.protocol === 'true' ? 'proxy_protocol on;' : ''}\n`)
+      : '';
     config += `}\n\n`;
   });
 
@@ -46,7 +51,31 @@ export default async function handler(
       message: '필수 파라미터가 누락되었습니다.',
     });
   }
-
+  if (data.length === 0) {
+    try {
+      if (fs.readFileSync(dir + type + '/' + phone + '.cfg')) {
+        fs.rmSync(dir + type + '/' + phone + '.cfg');
+        return res.status(200).json({
+          status: 200,
+          code: 'PROXY_CREATE_SUCCESS',
+          message: '프록시 작성에 성공했습니다.',
+        });
+      } else {
+        return res.status(200).json({
+          status: 200,
+          code: 'PROXY_CREATE_SUCCESS',
+          message: '프록시 작성에 성공했습니다.',
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({
+        status: 500,
+        code: 'COMMON_ERROR',
+        message: '일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요',
+      });
+    }
+  }
   try {
     dirdata.forEach((i) => {
       if (fs.statSync(dir + i).isDirectory()) proxyList.push(i);
@@ -101,20 +130,10 @@ export default async function handler(
     const config = createNginxConfig(data);
     console.log(dir + type + '/' + phone + '.cfg');
     fs.writeFileSync(dir + type + '/' + phone + '.cfg', config); // 동기적 방식으로 변경
-    child_process.exec('sudo nginx -s reload', (error) => {
-      if (error) {
-        console.error(error);
-        return res.status(418).json({
-          status: 418,
-          code: 'NGINX_ERROR',
-          message: 'Nginx에서 오류가 발생하였습니다',
-        });
-      }
-      return res.status(200).json({
-        status: 200,
-        code: 'PROXY_CREATE_SUCCESS',
-        message: '프록시 작성에 성공했습니다.',
-      });
+    return res.status(200).json({
+      status: 200,
+      code: 'PROXY_CREATE_SUCCESS',
+      message: '프록시 작성에 성공했습니다.',
     });
   } catch (err) {
     console.error(err);

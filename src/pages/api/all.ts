@@ -22,10 +22,12 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
       const fileContent = fs.readFileSync(dir + i + '/' + fileName, 'utf-8');
       const listenRegex = /listen (\d+\.\d+\.\d+\.\d+:(\d+))/g;
       const backendRegex = /proxy_pass (\d+\.\d+\.\d+\.\d+:(\d+))/g;
+      const bindRegex = /proxy_bind\s+(\S+);/g;
 
       // matchAll 메소드를 사용하여 모든 listen 매치를 찾아내고 배열로 변환
       const listenMatches = [...fileContent.matchAll(listenRegex)];
-      const backendMatch = backendRegex.exec(fileContent);
+      const backendMatch = [...fileContent.matchAll(backendRegex)];
+      const bindMatch = bindRegex.exec(fileContent);
 
       // listenMatches 배열을 사용하여 포트 번호를 추출하고 이를 ','로 구분하여 문자열로 합침
       const ports = listenMatches
@@ -37,7 +39,8 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
           type: i,
           number: fileName.replace('.cfg', ''),
           listen: listenMatches.map((match) => match[1]).join(', '), // 여러 listen 주소를 문자열로 합침
-          backend: backendMatch[1],
+          backend: backendMatch.map((match) => match[1]).join(', '),
+          bind: bindMatch ? bindMatch[1] : '',
           port: ports, // 수정된 포트 번호 부분
         });
       }
