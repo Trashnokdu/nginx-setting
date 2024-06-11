@@ -38,26 +38,30 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     );
 
     // 정규 표현식을 사용하여 listen과 backend 주소 추출
-    const listenRegex = /listen (\d+\.\d+\.\d+\.\d+:\d+)( udp)?/g;
+    const serverBlockRegex = /server\s*\{(.*?)\}/gs;
+    const listenRegex = /listen\s+(\d+\.\d+\.\d+\.\d+:\d+)( udp)?/;
     const protocolRegex = /proxy_protocol/;
-    const backendRegex = /proxy_pass (\d+\.\d+\.\d+\.\d+:\d+)/g;
-    const bindRegex = /proxy_bind\s+(\S+);/g;
-    let listenMatch;
-    let backendMatch;
-    const bindMatch = bindRegex.exec(fileContent);
-    const protocolMatch = protocolRegex.exec(fileContent);
-    while (
-      (listenMatch = listenRegex.exec(fileContent)) !== null &&
-      (backendMatch = backendRegex.exec(fileContent)) !== null
-    ) {
-      alldata.push({
-        listen: listenMatch[1],
-        backend: backendMatch[1],
-        port: listenMatch[1].split(':')[1],
-        proxy_bind: bindMatch ? bindMatch[1] : '',
-        udp: listenMatch[2] ? 'true' : 'false', // " udp"가 있으면 "true", 없으면 "false"
-        protocol: protocolMatch ? 'true' : 'false', // " udp"가 있으면 "true", 없으면 "false"
-      });
+    const backendRegex = /proxy_pass\s+(\d+\.\d+\.\d+\.\d+:\d+)/;
+    const bindRegex = /proxy_bind\s+(\S+);/;
+
+    let serverBlockMatch;
+    while ((serverBlockMatch = serverBlockRegex.exec(fileContent)) !== null) {
+      const serverBlockContent = serverBlockMatch[1];
+      const listenMatch = listenRegex.exec(serverBlockContent);
+      const backendMatch = backendRegex.exec(serverBlockContent);
+      const bindMatch = bindRegex.exec(serverBlockContent);
+      const protocolMatch = protocolRegex.exec(serverBlockContent);
+
+      if (listenMatch && backendMatch) {
+        alldata.push({
+          listen: listenMatch[1],
+          backend: backendMatch[1],
+          port: listenMatch[1].split(':')[1],
+          proxy_bind: bindMatch ? bindMatch[1] : '',
+          udp: listenMatch[2] ? 'true' : 'false',
+          protocol: protocolMatch ? 'true' : 'false',
+        });
+      }
     }
 
     return res.send(alldata);

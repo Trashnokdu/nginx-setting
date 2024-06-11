@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import axios from 'axios';
 
 interface Response {
@@ -41,25 +41,32 @@ export default function Home() {
   const [types, setTypes] = useState([]);
   const router = useRouter();
   const [selectedValue, setSelectedValue] = useState('');
-  const handleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    // 선택된 값을 상태로 저장합니다.
-    setSelectedValue(event.target.value);
-  };
+  const params = useSearchParams();
 
   useEffect(() => {
-    fetch('/api/all')
-      .then((res) => res.json())
-      .then((data) => setData(data));
-    fetch('/api/type')
-      .then((res) => res.json())
-      .then((data) => {
-        setTypes(data);
-        setSelectedValue(data[0]);
-      });
-  }, []);
+    const fetchData = async () => {
+      const [allData, typeData] = await Promise.all([
+        fetch('/api/all').then((res) => res.json()),
+        fetch('/api/type').then((res) => res.json()),
+      ]);
+      setData(allData);
+      setTypes(typeData);
+      const type = params.get('type');
+      setSelectedValue(type || typeData[0]);
+    };
+    fetchData();
+  }, [params]);
+
+  const handleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const newType = event.target.value;
+    setSelectedValue(newType);
+    router.push(`?type=${newType}`);
+  };
+
   if (types.length === 0) {
-    return <>now Loading</>;
+    return <>Loading...</>;
   }
+
   return (
     <main className="p-10">
       <Button
