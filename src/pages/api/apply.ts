@@ -15,7 +15,7 @@ export default async function handler(
 
   try {
     await new Promise<void>((resolve, reject) => {
-      child_process.exec('dir', (error) => {
+      child_process.exec('sudo nginx -s reload', (error) => {
         if (error) {
           console.error(error);
           reject(new Error('Nginx에서 오류가 발생하였습니다'));

@@ -3,8 +3,8 @@ import fs from 'fs';
 const dir = '/root/.proxy/stream/';
 
 type Proxy = {
-  proxy_ip: string;
-  proxy_port: string;
+  proxy_ips: string[];
+  proxy_ports: string[];
   proxy_bind: string;
   backend_ip: string;
   backend_port: string;
@@ -12,12 +12,14 @@ type Proxy = {
   protocol: string;
 };
 
-function createNginxConfig(data: any) {
+function createNginxConfig(data: Proxy[]) {
   let config = '';
 
-  data.forEach((item: Proxy) => {
+  data.forEach((item) => {
     config += `server {\n`;
-    config += `    listen ${item.proxy_ip}:${item.proxy_port}${item.udp === 'true' ? ' udp' : ''};\n`;
+    item.proxy_ips.map((i, index) => {
+      config += `    listen ${i}:${item.proxy_ports[index]}${item.udp === 'true' ? ' udp' : ''};\n`;
+    });
     item.proxy_bind ? (config += `    proxy_bind ${item.proxy_bind};\n`) : '';
     config += `    proxy_pass ${item.backend_ip}:${item.backend_port};\n`;
     item.protocol
@@ -45,10 +47,10 @@ export default async function handler(
 
   const { data, phone, type } = req.body;
 
-  if (!type || !phone || !data) {
+  if (!type || !phone || !data || !Array.isArray(data)) {
     return res.status(400).send({
       code: 'INVALID_REQUIRED_PARAM',
-      message: '필수 파라미터가 누락되었습니다.',
+      message: '필수 파라미터가 누락되었거나 데이터가 배열이 아닙니다.',
     });
   }
   if (data.length === 0) {
@@ -82,16 +84,18 @@ export default async function handler(
     });
     const ipPortSet = new Set();
     for (const item of data) {
-      const ipPort = item.proxy_ip + ':' + item.proxy_port; // IP와 포트를 결합하여 고유한 문자열 생성
-      if (ipPortSet.has(ipPort)) {
-        // 이미 존재하는 'proxy_ip:proxy_port' 조합을 발견한 경우, 오류 메시지 반환
-        return res.status(409).json({
-          status: 409,
-          code: 'REQ_PORT_CONFLICT',
-          message: '요청된 데이터 내에 중복된 프록시 포트가 존재합니다.',
-        });
-      }
-      ipPortSet.add(ipPort); // 'ipPortSet'에 'proxy_ip:proxy_port' 조합 추가
+      item.proxy_ips.map((i: any, index: any) => {
+        const ipPort = i + ':' + item.proxy_ports[index]; // IP와 포트를 결합하여 고유한 문자열 생성
+        if (ipPortSet.has(ipPort)) {
+          // 이미 존재하는 'proxy_ip:proxy_port' 조합을 발견한 경우, 오류 메시지 반환
+          return res.status(409).json({
+            status: 409,
+            code: 'REQ_PORT_CONFLICT',
+            message: '요청된 데이터 내에 중복된 프록시 포트가 존재합니다.',
+          });
+        }
+        ipPortSet.add(ipPort); // 'ipPortSet'에 'proxy_ip:proxy_port' 조합 추가
+      });
     }
 
     proxyList.forEach((i: any) => {

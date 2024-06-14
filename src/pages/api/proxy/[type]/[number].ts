@@ -39,7 +39,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 
     // 정규 표현식을 사용하여 listen과 backend 주소 추출
     const serverBlockRegex = /server\s*\{(.*?)\}/gs;
-    const listenRegex = /listen\s+(\d+\.\d+\.\d+\.\d+:\d+)( udp)?/;
+    const listenRegex = /listen (\d+\.\d+\.\d+\.\d+):(\d+)(?:(?: udp))?/g;
     const protocolRegex = /proxy_protocol/;
     const backendRegex = /proxy_pass\s+(\d+\.\d+\.\d+\.\d+:\d+)/;
     const bindRegex = /proxy_bind\s+(\S+);/;
@@ -47,20 +47,27 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     let serverBlockMatch;
     while ((serverBlockMatch = serverBlockRegex.exec(fileContent)) !== null) {
       const serverBlockContent = serverBlockMatch[1];
-      const listenMatch = listenRegex.exec(serverBlockContent);
+      console.log(serverBlockContent);
+      const listenMatches = serverBlockContent.match(listenRegex);
       const backendMatch = backendRegex.exec(serverBlockContent);
       const bindMatch = bindRegex.exec(serverBlockContent);
       const protocolMatch = protocolRegex.exec(serverBlockContent);
-
-      if (listenMatch && backendMatch) {
-        alldata.push({
-          listen: listenMatch[1],
-          backend: backendMatch[1],
-          port: listenMatch[1].split(':')[1],
-          proxy_bind: bindMatch ? bindMatch[1] : '',
-          udp: listenMatch[2] ? 'true' : 'false',
-          protocol: protocolMatch ? 'true' : 'false',
-        });
+      if (listenMatches && backendMatch) {
+        const ipPortList = [];
+        for (const item of listenMatches) {
+          const ipPort = item.split(' ')[1];
+          ipPortList.push(ipPort);
+        }
+        for (const listenMatch of listenMatches) {
+          alldata.push({
+            listen: ipPortList,
+            backend: backendMatch[1],
+            port: listenMatch.split(':')[1],
+            proxy_bind: bindMatch ? bindMatch[1] : '',
+            udp: listenMatch.includes('udp') ? true : false,
+            protocol: protocolMatch ? true : false,
+          });
+        }
       }
     }
 

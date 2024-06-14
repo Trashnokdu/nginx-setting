@@ -5,14 +5,15 @@ import React from 'react';
 import axios from 'axios';
 import { useSearchParams } from 'next/navigation';
 
-type Proxy = {
-  proxy_ip: string;
-  proxy_port: string;
+interface Proxy {
+  proxy_ips: string[];
+  proxy_ports: string[];
+  proxy_bind: string;
   backend_ip: string;
   backend_port: string;
   udp: string;
-  [key: string]: string; // 인덱스 시그니처를 추가하여 동적 속성 이름을 허용
-};
+  protocol: string;
+}
 
 export default function Home() {
   const [types, setTypes] = useState<string[]>([]);
@@ -21,8 +22,8 @@ export default function Home() {
   const params = useSearchParams();
   const [proxies, setProxies] = useState<Proxy[]>([
     {
-      proxy_ip: '',
-      proxy_port: '',
+      proxy_ips: [''],
+      proxy_ports: [''],
       proxy_bind: '',
       backend_ip: '',
       backend_port: '',
@@ -59,13 +60,20 @@ export default function Home() {
         .then((data) => {
           const newArray = data.map((item: any) => {
             // listen과 backend에서 IP와 포트를 분리합니다.
-            const [listenIP, listenPort] = item.listen.split(':');
+            console.log(item.listen);
+            const ips: string[] = [];
+            const ports: string[] = [];
+            item.listen.map((i: any) => {
+              const [listenIP, listenPort] = i.split(':');
+              ips.push(listenIP);
+              ports.push(listenPort);
+            });
             const [backendIP, backendPort] = item.backend.split(':');
 
             // 새로운 형식의 객체를 반환합니다.
             return {
-              proxy_ip: listenIP,
-              proxy_port: listenPort,
+              proxy_ips: ips,
+              proxy_ports: ports,
               backend_ip: backendIP,
               backend_port: backendPort,
               proxy_bind: item.proxy_bind,
@@ -74,6 +82,7 @@ export default function Home() {
             };
           });
           setSelectedValue(type);
+          console.log(newArray);
           setProxies(newArray);
         });
     }
@@ -89,8 +98,9 @@ export default function Home() {
     setProxies([
       ...proxies,
       {
-        proxy_ip: '',
-        proxy_port: '',
+        proxy_ips: [''],
+        proxy_ports: [''],
+        proxy_bind: '',
         backend_ip: '',
         backend_port: '',
         udp: 'false',
@@ -99,12 +109,24 @@ export default function Home() {
     ]);
   };
   // 프록시 정보 입력 처리 함수 (예시로 단순화됨)
-  const onChange = (index: number, field: keyof Proxy, value: string) => {
+  const handleChange = (index: number, field: keyof Proxy, value: string) => {
     const updatedProxies = [...proxies];
-    updatedProxies[index][field] = value;
+    if (field === 'proxy_ips' || field === 'proxy_ports') {
+      updatedProxies[index][field][0] = value;
+    } else {
+      updatedProxies[index][field] = value;
+    }
     setProxies(updatedProxies);
   };
-
+  const handleChange2 = (index: number, key: string, value: any) => {
+    const updatedProxies = [...proxies];
+    if (key === 'proxy_ips' || key === 'proxy_ports') {
+      updatedProxies[index][key] = value
+        .split(',')
+        .map((item: any) => item.trim());
+    }
+    setProxies(updatedProxies);
+  };
   return (
     <main className="flex flex-col items-center justify-center p-10 mx-auto">
       <h1 className="text-3xl font-semibold mb-6 mx-auto">프록시 등록</h1>
@@ -140,29 +162,35 @@ export default function Home() {
               <Label>프록시 IP</Label>
               <input
                 style={{ width: '80%' }}
-                onChange={(e) => onChange(index, 'proxy_ip', e.target.value)}
+                onChange={(e) =>
+                  handleChange2(index, 'proxy_ips', e.target.value)
+                }
                 type="text"
                 id={`proxy_ip_${index}`}
                 className="outline outline-2 outline-offset-2 rounded"
-                value={proxy.proxy_ip}
+                value={proxy.proxy_ips.join(',')}
               />
             </div>
             <div className="grid w-full max-w-sm justify-center gap-1.5 mb-8">
               <Label>프록시 포트</Label>
               <input
                 style={{ width: '80%' }}
-                onChange={(e) => onChange(index, 'proxy_port', e.target.value)}
+                onChange={(e) =>
+                  handleChange2(index, 'proxy_ports', e.target.value)
+                }
                 type="text"
-                id={`proxy_port_${index}`}
+                id={`proxy_ip_${index}`}
                 className="outline outline-2 outline-offset-2 rounded"
-                value={proxy.proxy_port}
+                value={proxy.proxy_ports.join(',')}
               />
             </div>
             <div className="grid w-full max-w-sm justify-center gap-1.5 mb-8">
               <Label>프록시 바인드</Label>
               <input
                 style={{ width: '80%' }}
-                onChange={(e) => onChange(index, 'proxy_bind', e.target.value)}
+                onChange={(e) =>
+                  handleChange(index, 'proxy_bind', e.target.value)
+                }
                 type="text"
                 id={`proxy_bind_${index}`}
                 className="outline outline-2 outline-offset-2 rounded"
@@ -173,7 +201,9 @@ export default function Home() {
               <Label>벡엔드 아이피</Label>
               <input
                 style={{ width: '80%' }}
-                onChange={(e) => onChange(index, 'backend_ip', e.target.value)}
+                onChange={(e) =>
+                  handleChange(index, 'backend_ip', e.target.value)
+                }
                 type="text"
                 id={`backend_ip_${index}`}
                 className="outline outline-2 outline-offset-2 rounded"
@@ -185,7 +215,7 @@ export default function Home() {
               <input
                 style={{ width: '80%' }}
                 onChange={(e) =>
-                  onChange(index, 'backend_port', e.target.value)
+                  handleChange(index, 'backend_port', e.target.value)
                 }
                 type="text"
                 id={`backend_port_${index}`}
@@ -199,7 +229,7 @@ export default function Home() {
                 style={{ width: '150%' }}
                 className="outline outline-2 outline-offset-2 rounded"
                 value={proxy.udp}
-                onChange={(e) => onChange(index, 'udp', e.target.value)}
+                onChange={(e) => handleChange(index, 'udp', e.target.value)}
               >
                 <option value="true">True</option>
                 <option value="false">False</option>
@@ -211,7 +241,9 @@ export default function Home() {
                 style={{ width: '150%' }}
                 className="outline outline-2 outline-offset-2 rounded"
                 value={proxy.protocol}
-                onChange={(e) => onChange(index, 'protocol', e.target.value)}
+                onChange={(e) =>
+                  handleChange(index, 'protocol', e.target.value)
+                }
               >
                 <option value="true">True</option>
                 <option value="false">False</option>
@@ -266,10 +298,10 @@ export default function Home() {
           if (
             proxies.some((i) => {
               if (
-                !i.proxy_ip ||
+                !i.proxy_ips ||
                 !i.backend_ip ||
                 !i.backend_port ||
-                !i.proxy_port
+                !i.proxy_ports
               ) {
                 alert('올바르지않은 입력입니다. 입력란을 다시 확인해주세요');
                 return true; // 상위 함수로 돌아가기 위해 true 반환
